@@ -8,14 +8,39 @@
 
 import Foundation
 
-class MemoryInputStream {
+class MemoryStream {
 
 	enum StreamError: Error {
 		case insufficiencyStreamData
+		case insufficiencyStreamCapacity
 		case unknownStringEncoding
 		case unknownReason
 	}
 	
+	enum IntegerByteOrder {
+		case littleEndian
+		case bigEndian
+	}
+	
+	var integerByteOrder: IntegerByteOrder!
+	fileprivate var defaultIntegerByteOrder: IntegerByteOrder!
+
+	init() {
+		let bytes = UInt16(0x1234).bytes()
+		if bytes[0] == 0x12 {
+			defaultIntegerByteOrder = .bigEndian
+		} else {
+			defaultIntegerByteOrder = .littleEndian
+		}
+		integerByteOrder = defaultIntegerByteOrder
+	}
+	
+	func open() {}
+	func close() {}
+}
+
+class MemoryInputStream: MemoryStream {
+
 	// Subclass of InputStream does not work by NSInvalidArgumentException.
 	// NSInvalidArgumentException says "-open only defined for abstract class."
 	var stream: InputStream!
@@ -23,6 +48,7 @@ class MemoryInputStream {
 	var streamDataLength: Int = 0
 	
 	init(data: Data) {
+		super.init()
 		stream = InputStream(data: data)
 		streamDataLength = data.count
 	}
@@ -30,11 +56,11 @@ class MemoryInputStream {
 	deinit {
 	}
 
-	func open() {
+	override func open() {
 		stream.open()
 	}
 	
-	func close() {
+	override func close() {
 		stream.close()
 	}
 	
@@ -42,6 +68,16 @@ class MemoryInputStream {
 		let bytes = try readBytes(length: MemoryLayout<T>.size)
 		guard let value = T(bytes: bytes) else {
 			throw StreamError.insufficiencyStreamData
+		}
+		if integerByteOrder != defaultIntegerByteOrder {
+			// These converting are not cool.
+			if let value16 = value as? UInt16 {
+				return value16.byteSwapped as! T
+			} else if let value32 = value as? UInt32 {
+				return value32.byteSwapped as! T
+			} else if let value64 = value as? UInt64 {
+				return value64.byteSwapped as! T
+			}
 		}
 		return value
 	}
@@ -71,7 +107,7 @@ class MemoryInputStream {
 		}
 		return readBuffer
 	}
-
+	
 	private func readStream(_ buffer: UnsafeMutablePointer<UInt8>, maxLength len: Int) throws -> Int {
 		let readCount = stream.read(buffer, maxLength: len)
 		if readCount > 0 {
@@ -92,13 +128,7 @@ class MemoryInputStream {
 
 // MARK: -
 
-class MemoryOutputStream {
-	
-	enum StreamError: Error {
-		case insufficiencyStreamCapacity
-		case unknownStringEncoding
-		case unknownReason
-	}
+class MemoryOutputStream: MemoryStream {
 	
 	// Subclass of OutputStream does not work by NSInvalidArgumentException.
 	// NSInvalidArgumentException says "-open only defined for abstract class."
@@ -106,23 +136,39 @@ class MemoryOutputStream {
 	
 	var streamDataLength: Int = 0
 
-	init() {
+	override init() {
+		super.init()
 		stream = OutputStream(toMemory: ())
 	}
 	
 	deinit {
 	}
 	
-	func open() {
+	override func open() {
 		stream.open()
 	}
 	
-	func close() {
+	override func close() {
 		stream.close()
 	}
 	
 	func write<T: BytePackedInteger>(integer: T) throws {
-		let bytes = integer.bytes()
+		var value: T
+		if integerByteOrder == defaultIntegerByteOrder {
+			value = integer
+		} else {
+			// These converting are not cool.
+			if let value16 = integer as? UInt16 {
+				value = value16.byteSwapped as! T
+			} else if let value32 = integer as? UInt32 {
+				value = value32.byteSwapped as! T
+			} else if let value64 = integer as? UInt64 {
+				value = value64.byteSwapped as! T
+			} else {
+				value = integer
+			}
+		}
+		let bytes = value.bytes()
 		try write(bytes: bytes, length: bytes.count)
 	}
 	

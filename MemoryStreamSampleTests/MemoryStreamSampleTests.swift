@@ -61,12 +61,13 @@ class MemoryStreamSampleTests: XCTestCase {
 	func testInputStream() {
 		let data = Data(bytes: [0x01, 0x02, 0x03, 0x04])
 		let stream = MemoryInputStream(data: data)
+		stream.integerByteOrder = .bigEndian
 		stream.open()
 		do {
 			let a: UInt16 = try stream.readInteger()
 			let b: UInt16 = try stream.readInteger()
-			assert(a == 0x0201)
-			assert(b == 0x0403)
+			assert(a == 0x0102)
+			assert(b == 0x0304)
 		} catch {
 			assertionFailure()
 		}
@@ -75,10 +76,11 @@ class MemoryStreamSampleTests: XCTestCase {
 	
 	func testOutputStream() {
 		let stream = MemoryOutputStream()
+		stream.integerByteOrder = .bigEndian
 		stream.open()
 		do {
-			let a = UInt16(bytes: [0x01, 0x02])!
-			let b = UInt16(bytes: [0x03, 0x04])!
+			let a = UInt16(0x0102)
+			let b = UInt16(0x0304)
 			try stream.write(integer: a)
 			try stream.write(integer: b)
 		} catch {
@@ -88,7 +90,8 @@ class MemoryStreamSampleTests: XCTestCase {
 		let data = stream.data()
 		let b = data.bytes()
 		assert(b.count == 4 &&
-			b[0] == 0x01 && b[1] == 0x02 && b[2] == 0x03 && b[3] == 0x04
+			b[0] == 0x01 && b[1] == 0x02 &&
+			b[2] == 0x03 && b[3] == 0x04
 		)
 	}
 }
