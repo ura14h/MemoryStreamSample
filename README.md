@@ -41,6 +41,7 @@ stream.close()
 - `write(string: String, length: Int)`
 - `write(data: Data, length: Int)`
 - `write(bytes: [UInt8], length: Int)`
+- `data() -> Data` ... Get data are pooled in the stream.
 
 ### Example
 
