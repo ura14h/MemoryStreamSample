@@ -96,8 +96,8 @@ class MemoryInputStream: MemoryStream {
 		return data
 	}
 	
-	func readBytes(length: Int) throws -> [UInt8] {
-		var readBuffer = [UInt8](repeating: 0, count: length)
+	func readBytes(length: Int = Int.max) throws -> [UInt8] {
+		var readBuffer = [UInt8](repeating: 0, count: (length == Int.max) ? streamDataLength : length)
 		if streamDataLength < readBuffer.count {
 			throw StreamError.insufficiencyStreamData
 		}
@@ -182,8 +182,8 @@ class MemoryOutputStream: MemoryStream {
 		try write(bytes: bytes, length: (length == Int.max) ? bytes.count : length)
 	}
 	
-	func write(bytes: [UInt8], length: Int) throws {
-		let writeCount = try writeStream(bytes, maxLength: length)
+	func write(bytes: [UInt8], length: Int = Int.max) throws {
+		let writeCount = try writeStream(bytes, maxLength: (length == Int.max) ? bytes.count : length)
 		if writeCount != length {
 			throw StreamError.insufficiencyStreamCapacity
 		}
