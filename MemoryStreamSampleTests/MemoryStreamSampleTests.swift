@@ -64,10 +64,12 @@ class MemoryStreamSampleTests: XCTestCase {
 		stream.integerByteOrder = .bigEndian
 		stream.open()
 		do {
-			let a: UInt16 = try stream.readInteger()
+			let a: String = try stream.readString(length: 0)
 			let b: UInt16 = try stream.readInteger()
-			assert(a == 0x0102)
-			assert(b == 0x0304)
+			let c: UInt16 = try stream.readInteger()
+			assert(a == "")
+			assert(b == 0x0102)
+			assert(c == 0x0304)
 		} catch {
 			assertionFailure()
 		}
@@ -79,10 +81,12 @@ class MemoryStreamSampleTests: XCTestCase {
 		stream.integerByteOrder = .bigEndian
 		stream.open()
 		do {
-			let a = UInt16(0x0102)
-			let b = UInt16(0x0304)
-			try stream.write(integer: a)
+			let a = ""
+			let b = UInt16(0x0102)
+			let c = UInt16(0x0304)
+			try stream.write(string: a)
 			try stream.write(integer: b)
+			try stream.write(integer: c)
 		} catch {
 			assertionFailure()
 		}

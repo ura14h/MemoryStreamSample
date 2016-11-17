@@ -109,6 +109,10 @@ class MemoryInputStream: MemoryStream {
 	}
 	
 	private func readStream(_ buffer: UnsafeMutablePointer<UInt8>, maxLength len: Int) throws -> Int {
+		if len == 0 {
+			buffer.initialize(to: 0, count: 0)
+			return 0
+		}
 		let readCount = stream.read(buffer, maxLength: len)
 		if readCount > 0 {
 			streamDataLength = streamDataLength - readCount
@@ -190,6 +194,9 @@ class MemoryOutputStream: MemoryStream {
 	}
 
 	private func writeStream(_ buffer: UnsafePointer<UInt8>, maxLength len: Int) throws -> Int {
+		if len == 0 {
+			return 0
+		}
 		let writeCount = stream.write(buffer, maxLength: len)
 		if writeCount > 0 {
 			streamDataLength = streamDataLength + writeCount
